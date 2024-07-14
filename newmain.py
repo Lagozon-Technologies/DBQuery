@@ -16,11 +16,11 @@ import configure
 from PIL import Image
 img = Image.open(r"images.png")
 st.set_page_config(page_title="DBQuery.AI", page_icon=img)
+import plotly.express as px
 # from table_details import get_table_details , get_tables , itemgetter , create_extraction_chain_pydantic, Table , llm
 #commenting below to focus on streamlit
 from newlangchain_utils import *
-import plotly.express as px
-from io import BytesIO
+
 
 col1, col2 = st.columns([1, 5])
 
@@ -29,6 +29,7 @@ with col1:
 
 with col2:
     st.title("Database Assistant for Service Desk")
+#st.title("Ask query to any department")
 
 # Set OpenAI API key from Streamlit secrets
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
@@ -105,9 +106,9 @@ if prompt := st.chat_input(selected_subject_final):
         st.markdown(x)
         st.markdown(y)
         st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
-        # for table, data in tables_data.items():
-        #     st.markdown(f"*Data from {table}:*")
-        #     st.dataframe(data)
+        for table, data in tables_data.items():
+            st.markdown(f"*Data from {table}:*")
+            st.dataframe(data)
     st.session_state.messages.append({"role": "assistant", "content": response})
 def plot_chart(data_df, x_axis, y_axis, chart_type):
     if chart_type == "Line Chart":
@@ -135,12 +136,6 @@ def plot_chart(data_df, x_axis, y_axis, chart_type):
         return
     
     st.plotly_chart(fig)
-def download_as_excel(data, filename="data.xlsx"):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        data.to_excel(writer, index=False, sheet_name='Sheet1')
-    output.seek(0)
-    return output
 if "response" in st.session_state and "tables_data" in st.session_state:
     for table, data in st.session_state.tables_data.items():
         st.markdown(f"Data from {table}:")
@@ -157,10 +152,3 @@ if "response" in st.session_state and "tables_data" in st.session_state:
             )
             if st.button(f"Generate Chart", key=f"generate_chart_{table}"):
                 plot_chart(data, x_axis, y_axis, chart_type)
-        excel_data = download_as_excel(data)
-        st.download_button(
-            label="Download as Excel",
-            data=excel_data,
-            file_name=f"{table}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
