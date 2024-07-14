@@ -1,3 +1,2 @@
-Customer.csv
 Table,Description
-lz_customers, "This table has information related to the customers like customer id, first name, last name, email and phone number "
+lz_customers,"This table has information related to the customers like customer id, first name, last name, email and phone number."
