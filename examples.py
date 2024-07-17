@@ -1,65 +1,114 @@
+# **********************************************************************************************#
+# File name: examples.py
+# Created by: Krushna B.
+# Creation Date: 25-Jun-2024
+# Application Name: DBQUERY_NEW.AI
+#
+# Change Details:
+# Version No:     Date:        Changed by     Changes Done         
+# 01             25-Jun-2024   Krushna B.     Initial Creation
+# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 01             15-Jul-2024   Krushna B.     Added more examples for the model to work more finely
+# **********************************************************************************************#
+
 examples = [
-   {
+    {
         "input": "list all the employees",
-        "query": "select * from lz_employee"
-   },
-#     {
-#         "input": "what items people are searching for",
-#         "query": "SELECT distinct(search_name) FROM fin_dbt_search"
-#     },
-#     {
-#         "input": "Count of people with various Origination interaction ",
-#         "query": "SELECT COUNT(INTERACTION) as count, interaction FROM fin_abt_attribution  group by interaction"
-#     },
-#     {
-#         "input": "Count of landing Ad campaign visitors from location like city , country ",
-#         "query": "SELECT COUNT(CU_CUSTOMER_ID), GE_CITY, GE_COUNTRY FROM FIN_DBT_ADV_CAMPAIGN_VISITORS group by GE_CITY, GE_COUNTRY"
-#     },
-#     {
-#         "input": "Average time spent by visitors on web page or mobile session.",
-#         "query": "SELECT AVG(ACTIVE_PAGE_VIEW_TIME) from FIN_DBT_CONTENT "
-#     },
-#     {
-#         "input": "How many product view by products in last week",
-#         # "query": "SELECT count(product_views), product_id FROM fin_dbt_ecommerce where WEEK(session_start_dttm_tz) = WEEK(CURRENT_DATE) - 1 group by product_id"
-#         "query": "SELECT product_id, COUNT(product_views) AS total_product_views,DATE_TRUNC('WEEK', session_start_dttm_tz) as CurrentWeek FROM fin_dbt_ecommerce WHERE  CurrentWeek BETWEEN DATEADD('WEEK', -2, CURRENT_DATE()) AND CURRENT_DATE() GROUP BY product_id, CurrentWeek ;"
-#     },
-#     {
-#      'input':"List all abandon forms in current month",
-#      "query": "SELECT forms_started, forms_not_submitted , date_trunc('MONTH',session_start_dttm_tz ) as  CurrentMonth FROM fin_dbt_forms WHERE forms_started = 1 and forms_not_submitted=1 and  CurrentMonth between  DATEADD('MONTH', -1, CURRENT_DATE() ) and CURRENT_DATE() "   
-#     },
-#     {
-#       'input':"How many emails have we send in each of the past 6 months?" ,
-#       "query":"SELECT DATE_TRUNC ('MONTH', email_send_dttm) AS month,  COUNT(*) AS email_count FROM fin_email_send WHERE  email_send_dttm >= DATEADD (MONTH, -6, CURRENT_DATE) GROUP BY  month ORDER BY  month;"
-#     },
-#     {
-#       'input':"How many emails have we send in last 6 months?" ,
-#       "query":"SELECT  COUNT(*) AS email_count FROM  fin_email_send WHERE  fin_email_send.email_send_dttm >= DATEADD (MONTH, -6, CURRENT_DATE);"
-#     },
-#     {
-#       'input':"How many emails have we send in last year?" ,
-#       "query":"SELECT  COUNT(*) AS email_count FROM  fin_email_send WHERE  fin_email_send.email_send_dttm >= DATEADD (YEAR, -1, CURRENT_DATE);"
-#     },
-#     {
-#       'input':"How many emails have we send in last quarter?" ,
-#       "query":"SELECT COUNT(*) AS email_count , DATEADD (QUARTER, -1, CURRENT_DATE) as LAST_QUARTER FROM  fin_email_send WHERE fin_email_send.email_send_dttm >= DATEADD (QUARTER, -1, CURRENT_DATE) group by LAST_QUARTER;"
-#     },
-#     {
-#       'input':"How many emails have we send in last 2 weeks?" ,
-#       "query":"SELECT COUNT(*) AS email_count , DATEADD (WEEK, -2, CURRENT_DATE) as LAST_2_WEEKS FROM  fin_email_send WHERE  fin_email_send.email_send_dttm >= DATEADD (WEEK, -2, CURRENT_DATE) GROUP BY LAST_2_WEEKS;"
-#     },
-#     {
-#       'input':"How many emails have we send between the today and 1st Apr 2024" ,
-#       "query":"SELECT  COUNT(*) AS email_count FROM  fin_email_send WHERE  fin_email_send.email_send_dttm >= TO_DATE ('2024-04-01', 'YYYY-MM-DD')  AND fin_email_send.email_send_dttm < CURRENT_DATE;"
-#     }
-
-    
+        "query": "SELECT * FROM lz_employees"
+    },
+    {
+        "input": "list all the doctors",
+        "query": "SELECT * FROM lz_doctors"
+    },
+    {
+        "input": "list all the nurses",
+        "query": "SELECT * FROM lz_nurses"
+    },
+    {
+        "input": "list all item transactions",
+        "query": "SELECT * FROM lz_item_trx"
+    },
+    {
+        "input": "count of doctors in each department",
+        "query": "SELECT department_id, COUNT(*) as doctor_count FROM lz_doctors GROUP BY department_id"
+    },
+    {
+        "input": "total number of customers",
+        "query": "SELECT COUNT(*) as total_customers FROM lz_customers"
+    },
+    {
+        "input": "average salary of employees",
+        "query": "SELECT AVG(salary) as average_salary FROM lz_employees"
+    },
+    {
+        "input": "total revenue from sales",
+        "query": "SELECT SUM(total_amount) as total_revenue FROM lz_receipts"
+    },
+    {
+        "input": "number of items in stock",
+        "query": "SELECT SUM(onhand_quantity) AS total_items_in_stock FROM lz_item_onhand"
+    },
+    {
+        "input": "number of radiology exams conducted in the last month",
+        "query": "SELECT COUNT(*) as exams_last_month FROM lz_radiology_exams WHERE exam_date >= NOW() - INTERVAL '1 month'"
+    },
+    {
+        "input": "List all invoices with their corresponding receipts",
+        "query": "SELECT i.invoiceid, i.customerid, i.invoicedate, i.duedate, i.totalamount, r.receiptid, r.paymentamount FROM lz_invoices i LEFT JOIN lz_receipts r ON i.invoiceid = r.invoiceid"
+    },
+    {
+        "input": "list of doctors by department",
+        "query": "SELECT department_id, doctor_name FROM lz_doctors ORDER BY department_id, doctor_name"
+    },
+    {
+        "input": "Get total amount invoiced and total amount paid for each customer",
+        "query": "SELECT i.customerid, SUM(i.totalamount) AS total_amount_invoiced, COALESCE(SUM(r.paymentamount), 0) AS total_amount_paid FROM lz_invoices i LEFT JOIN lz_receipts r ON i.invoiceid = r.invoiceid GROUP BY i.customerid"
+    },
+    {
+        "input": "List all receipts along with the corresponding invoice details",
+        "query": """
+            SELECT r.receipt_id, r.payment_amount, i.invoice_id, i.total_amount as invoice_amount
+            FROM lz_receipts r
+            JOIN lz_invoices i ON r.invoice_id = i.invoice_id
+        """
+    },
+    {
+        "input": "List all nurses along with their department names",
+        "query": """
+            SELECT n.nurse_id, n.nurse_name, d.department_name
+            FROM lz_nurses n
+            JOIN lz_departments d ON n.department_id = d.department_id
+        """
+    },
+    {
+        "input": "total revenue by customer",
+        "query": "SELECT customerid, SUM(totalamount) AS total_revenue FROM lz_invoices GROUP BY customerid"
+    },
+    {
+        "input": "list all the invoices in the second financial quarter of 2024",
+        "query": "SELECT * FROM lz_invoices WHERE EXTRACT(QUARTER FROM invoicedate) = 2 AND EXTRACT(YEAR FROM invoicedate) = 2024"
+    },
+    {
+        "input": "Find receipts without corresponding invoices",
+        "query": "SELECT r.receiptid, r.invoiceid, r.receiptdate, r.paymentamount, r.paymentmethod, r.paymentreference, r.paymentstatus FROM lz_receipts r LEFT JOIN lz_invoices i ON r.invoiceid = i.invoiceid WHERE i.invoiceid IS NULL"
+    },
+    {
+        "input": "total revenue by invoice date",
+        "query": "SELECT invoicedate, SUM(totalamount) as total_revenue FROM lz_invoices GROUP BY invoicedate"
+    },
+    {
+        "input": "Get total payment amount per payment method",
+        "query": "SELECT paymentmethod, SUM(paymentamount) AS total_payment_amount FROM lz_receipts GROUP BY paymentmethod"
+    },
+    # {
+    #     "input": "number of radiology exams per type",
+    #     "query": "SELECT exam_type, COUNT(*) as exam_count FROM lz_radiology_exams GROUP BY exam_type ORDER BY exam_count DESC"
+    # },
+    # {
+    #     "input": "total sales by food category",
+    #     "query": "SELECT food_category, SUM(amount) as total_sales FROM lz_foods GROUP BY food_category ORDER BY total_sales DESC"
+    # }
 ]
-
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-
 from langchain_community.vectorstores import Chroma
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
 from langchain_openai import OpenAIEmbeddings

@@ -13,7 +13,7 @@
 import os
 import pandas as pd
 from dotenv import load_dotenv
-
+import streamlit as st
 
 load_dotenv()
 
@@ -96,12 +96,19 @@ def get_chain(question, _messages, selected_model):
     print("and messages..", _messages, "This is generated query..", SQL_Statement)
     execute_query = QuerySQLDataBaseTool(db=db)
     rephrase_answer = answer_prompt | llm | StrOutputParser()
-
+    #COMMENTED BY KRUSHNA 
+    # chain = (
+    #     RunnablePassthrough.assign(table_names_to_use=table_chain) |
+    #     RunnablePassthrough.assign(query=generate_query).assign(
+    #         result=itemgetter("query") | execute_query
+    #     ) | rephrase_answer
+    # )
+    #ADDED BY KRUSHNA AS PER THE NEW REQUIREMENTS
     chain = (
         RunnablePassthrough.assign(table_names_to_use=table_chain) |
         RunnablePassthrough.assign(query=generate_query).assign(
-            result=itemgetter("query") | execute_query
-        ) | rephrase_answer
+            result=itemgetter("query") 
+        ) 
     )
 
     return chain, chosen_tables, SQL_Statement, db
@@ -130,7 +137,7 @@ def invoke_chain(question, messages, selected_model):
 
     tables_data = {}
     for table in chosen_tables:
-        query = response.split(";")[0] + ";"
+        query = response["query"] + ";"
         # result = db.run(query)
         print(f"Executing SQL Query: {query}")
         with alchemyEngine.connect() as conn:
