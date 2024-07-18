@@ -100,14 +100,64 @@ examples = [
         "input": "Get total payment amount per payment method",
         "query": "SELECT paymentmethod, SUM(paymentamount) AS total_payment_amount FROM lz_receipts GROUP BY paymentmethod"
     },
-    # {
-    #     "input": "number of radiology exams per type",
-    #     "query": "SELECT exam_type, COUNT(*) as exam_count FROM lz_radiology_exams GROUP BY exam_type ORDER BY exam_count DESC"
-    # },
-    # {
-    #     "input": "total sales by food category",
-    #     "query": "SELECT food_category, SUM(amount) as total_sales FROM lz_foods GROUP BY food_category ORDER BY total_sales DESC"
-    # }
+    {
+        "input": "Get orders with expected delivery date in the next 7 days",
+        "query": "SELECT * FROM lz_sales_order WHERE expecteddeliverydate BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days"
+    },
+    {
+        "input": "Get total orders per customer",
+        "query": "SELECT customerid, COUNT(*) AS total_orders FROM lz_sales_order GROUP BY customerid"
+    },
+    {
+    "input": "Get sales orders with notes containing specific keywords",
+    "query": "SELECT SalesOrderID, SalesOrderNumber, OrderNotes FROM lz_sales_order WHERE OrderNotes LIKE '%keyword%' ORDER BY OrderDate DESC"
+    },
+    {
+    "input": "Get total number of orders for each shipping method",
+    "query": "SELECT sm.ShippingMethod, COUNT(so.SalesOrderID) AS total_orders FROM lz_sales_order so JOIN lz_shipping_methods sm ON so.ShippingMethodID = sm.ShippingMethodID GROUP BY sm.ShippingMethod ORDER BY total_orders DESC"
+    },
+    {
+    "input": "List all sales orders with their payment methods",
+    "query": "SELECT so.SalesOrderID, so.SalesOrderNumber, pm.PaymentMethod FROM lz_sales_order so JOIN lz_payment_methods pm ON so.PaymentMethodID = pm.PaymentMethodID"
+    },
+    {
+    "input": "Get the average number of days between order date and expected delivery date",
+    "query": "SELECT AVG(ExpectedDeliveryDate - OrderDate) AS avg_delivery_time FROM lz_sales_order"
+    },
+    {
+    "input": "Get the number of orders per order status",
+    "query": "SELECT OrderStatus, COUNT(*) AS total_orders FROM lz_sales_order GROUP BY OrderStatus ORDER BY total_orders DESC"
+    },
+    {
+    "input": "Get sales order details along with customer details",
+    "query": "SELECT so.SalesOrderID, so.SalesOrderNumber, so.OrderDate, c.firstname, c.lastname, c.email FROM lz_sales_order so JOIN lz_customers c ON so.CustomerID = c.customerid"
+},
+    {
+    "input": "Get sales orders with their corresponding shipping methods",
+    "query": "SELECT so.SalesOrderID, so.SalesOrderNumber, sm.ShippingMethod FROM lz_sales_order so JOIN lz_shipping_methods sm ON so.ShippingMethodID = sm.ShippingMethodID"
+},
+    {
+    "input": "list all customers along with their sales orders",
+    "query": "SELECT lz_customers.*, lz_sales_order.* FROM lz_customers JOIN lz_sales_order ON lz_customers.CustomerID = lz_sales_order.CustomerID"
+},
+    {
+    "input": "count of sales orders per customer",
+    "query": "SELECT lz_customers.CustomerID, lz_customers.CustomerName, COUNT(lz_sales_order.SalesOrderID) as OrderCount FROM lz_customers JOIN lz_sales_order ON lz_customers.CustomerID = lz_sales_order.CustomerID GROUP BY lz_customers.CustomerID, lz_customers.CustomerName"
+},
+    {
+    "input": "total sales amount per customer",
+    "query": "SELECT lz_customers.CustomerID, lz_customers.CustomerName, SUM(lz_sales_order.TotalAmount) as TotalSales FROM lz_customers JOIN lz_sales_order ON lz_customers.CustomerID = lz_sales_order.CustomerID GROUP BY lz_customers.CustomerID, lz_customers.CustomerName"
+},
+    {
+    "input": "list all customers along with their most recent order",
+    "query": "SELECT c.customerid, c.firstname, c.lastname, so.SalesOrderID, so.OrderDate FROM lz_customers c LEFT JOIN lz_sales_order so ON c.customerid = so.CustomerID WHERE so.OrderDate = (SELECT MAX(OrderDate) FROM lz_sales_order WHERE CustomerID = c.customerid);"
+},
+    {
+    "input": "pending orders for each customer",
+    "query": "SELECT lz_customers.CustomerID, lz_customers.CustomerName, COUNT(lz_sales_order.SalesOrderID) as PendingOrders FROM lz_customers JOIN lz_sales_order ON lz_customers.CustomerID = lz_sales_order.CustomerID WHERE lz_sales_order.OrderStatus = 'Pending' GROUP BY lz_customers.CustomerID, lz_customers.CustomerName"
+}
+
+
 ]
 
 #Added by Aruna
