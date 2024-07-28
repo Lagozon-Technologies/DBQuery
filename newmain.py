@@ -1,5 +1,5 @@
 # **********************************************************************************************#
-# File name: newmain.py
+# File name: main.py
 # Created by: Krushna B.
 # Creation Date: 25-Jun-2024
 # Application Name: DBQUERY_NEW.AI
@@ -7,9 +7,10 @@
 # Change Details:
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
-# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 
-# **********************************************************************************************#
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback
+# 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
+#**********************************************************************************************#
 import streamlit as st
 #from openai import OpenAI
 import configure 
@@ -29,12 +30,15 @@ with col2:
     st.title("Database Assistant for Service Desk")
 # Set OpenAI API key from Streamlit secrets
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+# DATABASES = os.getenv("databases").split(',')
+# MODELS = os.getenv("models").split(',')
+#SUBJECT_AREAS = os.getenv("subject_areas").split(',')
 
 if "selected_model" not in st.session_state:
-    st.session_state.selected_model = 'gpt-3.5-turbo'
+    st.session_state.selected_model = configure.models[0]
     
 if "selected_database" not in st.session_state:
-    st.session_state.selected_database = 'PostgreSQL'
+    st.session_state.selected_database = configure.database[0]
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -46,28 +50,39 @@ if "chosen_tables" not in st.session_state:
         st.session_state.chosen_tables = []
 if "tables_data" not in st.session_state:
         st.session_state.tables_data = {}
+if "feedback" not in st.session_state:
+    st.session_state.feedback = []
+if "user_prompt" not in st.session_state:
+    st.session_state.user_prompt = ""
+
+if "generated_query" not in st.session_state:
+    st.session_state.generated_query = ""
+# if "selected_subject" not in st.session_state:
+#     st.session_state.selected_subject = SUBJECT_AREAS[0]
+# if "previous_subject" not in st.session_state:
+#     st.session_state.previous_subject = ""
 
 tab1, tab2 = st.tabs(["Setup", "Query"])
 
 with tab1:
     st.header("Setup")
     
-    database = ['PostgreSQL', 'Oracle', 'SQLite', 'MySQL']
-    st.session_state.selected_database = st.selectbox("Select a Database", database, index=database.index(st.session_state.selected_database))
-    models = ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o']
-    st.session_state.selected_model = st.selectbox("Select a Model", models, index=models.index(st.session_state.selected_model))
+    #database = ['PostgreSQL', 'Oracle', 'SQLite', 'MySQL']
+    st.session_state.selected_database = st.selectbox("Select a Database", configure.database, index=configure.database.index(st.session_state.selected_database))
+    #models = ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o']
+    st.session_state.selected_model = st.selectbox("Select a Model",configure.models, index=configure.models.index(st.session_state.selected_model))
     if st.button("Connect"):
         st.session_state.connection_status = True
         st.success("Connection established")
         
 with tab2:
     st.header("Query")
-    subject_areas = ['Employee', 'Customer Support', 'Medical', 'Manufacturing', 'Sales', 'Finance']
+    #subject_areas = ['Employee', 'Customer Support', 'Medical', 'Manufacturing', 'Sales', 'Finance']
     if "selected_subject" not in st.session_state:
-       st.session_state.selected_subject = subject_areas[0]
+       st.session_state.selected_subject = configure.subject_areas[0]
     if "previous_subject" not in st.session_state:
        st.session_state.previous_subject = ""
-    configure.selected_subject = st.selectbox("Select a Subject Area", subject_areas, index=subject_areas.index(st.session_state.selected_subject))
+    configure.selected_subject = st.selectbox("Select a Subject Area", configure.subject_areas, index=configure.subject_areas.index(st.session_state.selected_subject))
     
     if configure.selected_subject != st.session_state.previous_subject:
         
@@ -123,27 +138,50 @@ with tab2:
     selected_subject_final = ' '.join(selected_subject_input)
     
     if prompt := st.chat_input(selected_subject_final):
+        #st.session_state.user_prompt = prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
+        st.session_state.user_prompt = prompt
         with st.spinner("Generating response..."):
             response, chosen_tables, tables_data, agent_executor = invoke_chain(prompt, st.session_state.messages, st.session_state.selected_model)
-            st.session_state.response = response
+            #st.session_state.response = response
             st.session_state.chosen_tables = chosen_tables
             st.session_state.tables_data = tables_data
+            #st.session_state.user_prompt = prompt
+            st.session_state.generated_query = response["query"]
             # x=response.split(";")[0]+";"
             # y=response.split(";")[1]
             # st.markdown(x)
-            st.markdown(response["query"])
+            #st.markdown(response["query"])
             st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
         st.session_state.messages.append({"role": "assistant", "content": response})
     if "response" in st.session_state and "tables_data" in st.session_state:
-
+        st.markdown(st.session_state.user_prompt)
+        st.markdown(st.session_state.generated_query)
         for table, data in st.session_state.tables_data.items():
                 st.markdown(f"*Data from {table}:*")
 
                 st.dataframe(data)
+                col1, col2 = st.columns(2)
+
+                @st.cache_data
+                def get_like_count(table, feedback):
+                    return st.session_state.feedback.count({"table": table, "feedback": feedback})
+
+                with col1:
+                    if st.button(f"👍"):
+                        like_count = get_like_count(table, "like")
+                        st.session_state.feedback.append({"table": table, "feedback": "like"})
+                        insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "like")
+                        st.success(f"You liked the results ({like_count + 1})")
+
+                with col2:
+                    if st.button(f"👎"):
+                        dislike_count = get_like_count(table, "dislike")
+                        st.session_state.feedback.append({"table": table, "feedback": "dislike"})
+                        insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "dislike")
+                        st.error(f"You disliked the results ({dislike_count + 1})")
 
                 if not data.empty:
                     x_axis = st.selectbox(f"Select X-axis for {table}", data.columns, key=f"x_axis_{table}")
@@ -165,3 +203,17 @@ with tab2:
                         file_name=f"{table}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+#This change was done on 23/7/24 to keep track of the user's feedback            
+                # col1, col2 = st.columns(2)
+                # with col1:
+                #    if st.button(f"👍"):
+                #         st.session_state.feedback.append({"table": table, "feedback": "like"})
+                #         insert_feedback(configure.selected_subject,st.session_state.user_prompt,st.session_state.generated_query,table,data,"like")
+                #         st.success(f"You liked the results")
+                # with col2:
+                #     if st.button(f"👎"):
+                #         st.session_state.feedback.append({"table": table, "feedback": "dislike"})
+                #         #st.session_state.response = response
+                #         insert_feedback(configure.selected_subject,st.session_state.user_prompt,st.session_state.generated_query,table,data,"dislike")
+                #         st.error(f"You disliked the results")
