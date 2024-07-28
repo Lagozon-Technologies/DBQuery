@@ -7,8 +7,8 @@
 # Change Details:
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
-# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 01             15-Jul-2024   Krushna B.     Added more examples for the model to work more finely
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 03             15-Jul-2024   Krushna B.     Added more examples for the model to work more finely
 # **********************************************************************************************#
 
 examples = [
@@ -155,7 +155,50 @@ examples = [
     {
     "input": "pending orders for each customer",
     "query": "SELECT lz_customers.CustomerID, lz_customers.CustomerName, COUNT(lz_sales_order.SalesOrderID) as PendingOrders FROM lz_customers JOIN lz_sales_order ON lz_customers.CustomerID = lz_sales_order.CustomerID WHERE lz_sales_order.OrderStatus = 'Pending' GROUP BY lz_customers.CustomerID, lz_customers.CustomerName"
+},{
+    "input": "list all clients along with their insurance policies",
+    "query": "SELECT lz_ins_client.*, lz_ins_policy.* FROM lz_ins_client JOIN lz_ins_policy ON lz_ins_client.client_id = lz_ins_policy.client_id"
+},
+{
+    "input": "count of policies per client",
+    "query": "SELECT lz_ins_client.client_id, lz_ins_client.client_name, COUNT(lz_ins_policy.policy_id) as PolicyCount FROM lz_ins_client JOIN lz_ins_policy ON lz_ins_client.client_id = lz_ins_policy.client_id GROUP BY lz_ins_client.client_id, lz_ins_client.client_name"
+},
+{
+    "input": "total premium amount per client",
+    "query": "SELECT lz_ins_client.client_id, lz_ins_client.client_name, SUM(lz_ins_policy.premium_amount) as TotalPremium FROM lz_ins_client JOIN lz_ins_policy ON lz_ins_client.client_id = lz_ins_policy.client_id GROUP BY lz_ins_client.client_id, lz_ins_client.client_name"
+},
+{
+    "input": "list all clients along with their most recent policy",
+    "query": "SELECT c.client_id, c.client_name, p.policy_id, p.policy_start FROM lz_ins_client c LEFT JOIN lz_ins_policy p ON c.client_id = p.client_id WHERE p.policy_start = (SELECT MAX(policy_start) FROM lz_ins_policy WHERE client_id = c.client_id)"
+},
+{
+    "input": "pending claims for each client",
+    "query": "SELECT lz_ins_client.client_id, lz_ins_client.client_name, COUNT(lz_ins_claim.claim_id) as PendingClaims FROM lz_ins_client JOIN lz_ins_claim ON lz_ins_client.client_id = lz_ins_claim.client_id WHERE lz_ins_claim.claim_status = 'Pending' GROUP BY lz_ins_client.client_id, lz_ins_client.client_name"
+},
+{
+    "input": "list all policies along with their policy type",
+    "query": "SELECT lz_ins_policy.*, lz_ins_policy_type.* FROM lz_ins_policy JOIN lz_ins_policy_type ON lz_ins_policy.policy_type = lz_ins_policy_type.policy_type"
+},
+{
+    "input": "total premium amount collected by each agent",
+    "query": "SELECT lz_ins_agent.agent_id, lz_ins_agent.agent_name, SUM(lz_ins_policy.premium_amount) as TotalPremium FROM lz_ins_agent JOIN lz_ins_policy ON lz_ins_agent.agent_id = lz_ins_policy.agent_id GROUP BY lz_ins_agent.agent_id, lz_ins_agent.agent_name"
+},
+{
+    "input": "list all claims along with their policy details",
+    "query": "SELECT lz_ins_claim.*, lz_ins_policy.* FROM lz_ins_claim JOIN lz_ins_policy ON lz_ins_claim.policy_id = lz_ins_policy.policy_id"
+},{
+    "input": "list all clients along with their legal matters",
+    "query": "SELECT lz_legal_client.*, lz_legal_matter.* FROM lz_legal_client JOIN lz_legal_matter ON lz_legal_client.lg_client_id = lz_legal_matter.lg_client_id"
+},
+{
+    "input": "count of legal matters per client",
+    "query": "SELECT lz_legal_client.lg_client_id, lz_legal_client.lg_client_name, COUNT(lz_legal_matter.lg_matter_id) as MatterCount FROM lz_legal_client JOIN lz_legal_matter ON lz_legal_client.lg_client_id = lz_legal_matter.lg_client_id GROUP BY lz_legal_client.lg_client_id, lz_legal_client.lg_client_name"
+},
+{
+    "input": "list all attorneys along with their assigned legal matters",
+    "query": "SELECT lz_legal_attorney.*, lz_legal_matter.* FROM lz_legal_attorney JOIN lz_legal_matter ON lz_legal_attorney.lg_attorney_id = lz_legal_matter.lg_primary_attorney"
 }
+
 
 
 ]

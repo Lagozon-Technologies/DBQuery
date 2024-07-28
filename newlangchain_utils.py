@@ -7,8 +7,8 @@
 # Change Details:
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
-# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback 
 # **********************************************************************************************#
 import os
 import pandas as pd
@@ -134,7 +134,10 @@ def invoke_chain(question, messages, selected_model):
     
     alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
     
-
+#     tables_data = {
+#     table: pd.read_sql(sql=response["query"] + ";", con=alchemyEngine.connect().connection)
+#     for table in chosen_tables
+# }
     tables_data = {}
     for table in chosen_tables:
         query = response["query"] + ";"
@@ -151,3 +154,17 @@ def invoke_chain(question, messages, selected_model):
     
     
     return response, chosen_tables, tables_data, db
+#This change was done on 23/7/24 to keep track of the user's feedback 
+def insert_feedback(department,user_query, sql_query, table_name, data, feedback_type):
+    engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    insert_query = f"""
+    INSERT INTO lz_feedbacks (department, user_query, sql_query, table_name, data, feedback_type)
+    VALUES ('{department}', '{user_query}', '{sql_query}', '{table_name}', '{data}', '{feedback_type}')
+    """
+
+    session.execute(insert_query)
+    session.commit()
+    session.close()

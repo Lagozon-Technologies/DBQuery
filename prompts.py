@@ -1,3 +1,16 @@
+# **********************************************************************************************#
+# File name: prompts.py
+# Created by: Krushna B.
+# Creation Date: 25-Jun-2024
+# Application Name: DBQUERY_NEW.AI
+#
+# Change Details:
+# Version No:     Date:        Changed by     Changes Done         
+# 01             25-Jun-2024   Krushna B.     Initial Creation
+# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 
+# **********************************************************************************************#
+
 from examples import get_example_selector
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder,FewShotChatMessagePromptTemplate,PromptTemplate
 
