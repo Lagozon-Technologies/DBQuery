@@ -8,7 +8,8 @@
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
 # 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 
+# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback
+# 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # **********************************************************************************************#
 
 from examples import get_example_selector

@@ -1,3 +1,16 @@
+# **********************************************************************************************#
+# File name: table_details.py
+# Created by: Krushna B.
+# Creation Date: 25-Jun-2024
+# Application Name: DBQUERY_NEW.AI
+#
+# Change Details:
+# Version No:     Date:        Changed by     Changes Done         
+# 01             25-Jun-2024   Krushna B.     Initial Creation
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback 
+# 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
+# **********************************************************************************************#
 #from tkinter.messagebox import QUESTION
 import pandas as pd
 import streamlit as st
@@ -10,7 +23,7 @@ from langchain_openai import ChatOpenAI
 #from  langchain_openai.chat_models import with_structured_output
 
 
-llm = ChatOpenAI(model="gpt-3.5-turbo-1106", temperature=0)
+llm = ChatOpenAI(model=configure.selected_models, temperature=0)
 from typing import List
 
 # @st.cache_data

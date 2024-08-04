@@ -14,15 +14,17 @@
 import streamlit as st
 #from openai import OpenAI
 import configure 
+from configure import gauge_config
 from PIL import Image
+import plotly.graph_objects as go
 img = Image.open(r"images.png")
 st.set_page_config(page_title="DBQuery.AI", page_icon=img)
 from newlangchain_utils import *
 import plotly.express as px
 from io import BytesIO
-with st.sidebar:
-    #st.image("img.jpg", width=110)
-    st.title("DBQuery.AI")
+# with st.sidebar:
+#     #st.image("img.jpg", width=110)
+#     st.title("DBQuery.AI")
 col1, col2 = st.columns([1, 5])
 with col1:
     st.image("img.jpg", width=110)
@@ -57,14 +59,51 @@ if "user_prompt" not in st.session_state:
 
 if "generated_query" not in st.session_state:
     st.session_state.generated_query = ""
+if 'active_tab' not in st.session_state:
+    st.session_state.active_tab = 'Setup'
 # if "selected_subject" not in st.session_state:
 #     st.session_state.selected_subject = SUBJECT_AREAS[0]
 # if "previous_subject" not in st.session_state:
 #     st.session_state.previous_subject = ""
 
+
+# Function to create a circular gauge chart
+def create_circular_gauge_chart(title, value, min_val, max_val, color, subtext):
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value,
+        title={'text': title, 'font': {'size': 9, 'color': 'black'}, },
+        gauge={
+            'axis': {'range': [min_val, max_val], 'tickwidth': 1, 'tickcolor': "darkblue"},
+            'bar': {'color': color, 'thickness': 0.6},
+            'bgcolor': "white",
+            'borderwidth': 0,
+            'bordercolor': "white",
+            
+            'threshold': {
+                'line': {'color': color, 'width': 4},
+                'thickness': 0.75,
+                'value': value
+            }
+        },
+        number={'suffix': subtext, 'font': {'size': 10, 'color': 'gray'}}
+    ))
+    fig.update_layout(width=200, height=200, margin=dict(t=0, b=0, l=0, r=0))
+    return fig
+
+# Sidebar with small circular gauge charts
+with st.sidebar:
+    st.title("Assessment Dashboard")
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    for i, (title, config) in enumerate(gauge_config.items()):
+        with eval(f'col{i + 1}'):  # Dynamically select the column
+            st.plotly_chart(create_circular_gauge_chart(title, config["value"], 0, 100, config["color"], ""), use_container_width=True)
+# Setup and Query Tabs
 tab1, tab2 = st.tabs(["Setup", "Query"])
 
 with tab1:
+    st.session_state.active_tab = 'Setup'
     st.header("Setup")
     
     #database = ['PostgreSQL', 'Oracle', 'SQLite', 'MySQL']
@@ -76,6 +115,7 @@ with tab1:
         st.success("Connection established")
         
 with tab2:
+    st.session_state.active_tab = 'Query'
     st.header("Query")
     #subject_areas = ['Employee', 'Customer Support', 'Medical', 'Manufacturing', 'Sales', 'Finance']
     if "selected_subject" not in st.session_state:
@@ -126,8 +166,30 @@ with tab2:
        output = BytesIO()
        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
           data.to_excel(writer, index=False, sheet_name='Sheet1')
-       output.seek(0)
+       output.seek(0)  
        return output
+    def voting_interface(table_name):
+        votes = load_votes(table_name)
+
+        col1, col2, col3, col4, col5, col6= st.columns(6)
+
+        with col1:
+            if st.button(f"👍{votes['upvotes']}"):
+                votes["upvotes"] += 1
+                save_votes(table_name, votes)
+                insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table_name, data, "like")
+                st.experimental_rerun()
+
+        # with col2:
+        #     st.write(f"Upvotes: {votes['upvotes']}")
+        #     st.write(f"Downvotes: {votes['downvotes']}")
+
+        with col2:
+            if st.button(f"👎 {votes['downvotes']}"):
+                votes["downvotes"] += 1
+                save_votes(table_name, votes)
+                insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table_name, data, "dislike")
+                st.experimental_rerun()
 
     # Display chat messages from history on app rerun
     for message in st.session_state.messages:
@@ -161,27 +223,29 @@ with tab2:
         st.markdown(st.session_state.generated_query)
         for table, data in st.session_state.tables_data.items():
                 st.markdown(f"*Data from {table}:*")
-
                 st.dataframe(data)
-                col1, col2 = st.columns(2)
+                st.markdown("**Was this response helpful?**")
+                voting_interface(table)
+                #print("generated data":data)
+                # col1, col2 = st.columns(2)
 
-                @st.cache_data
-                def get_like_count(table, feedback):
-                    return st.session_state.feedback.count({"table": table, "feedback": feedback})
+                # @st.cache_data
+                # def get_like_count(table, feedback):
+                #     return st.session_state.feedback.count({"table": table, "feedback": feedback})
 
-                with col1:
-                    if st.button(f"👍"):
-                        like_count = get_like_count(table, "like")
-                        st.session_state.feedback.append({"table": table, "feedback": "like"})
-                        insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "like")
-                        st.success(f"You liked the results ({like_count + 1})")
+                # with col1:
+                #     if st.button(f"👍"):
+                #         like_count = get_like_count(table, "like")
+                #         st.session_state.feedback.append({"table": table, "feedback": "like"})
+                #         insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "like")
+                #         st.success(f"You liked the results ({like_count + 1})")
 
-                with col2:
-                    if st.button(f"👎"):
-                        dislike_count = get_like_count(table, "dislike")
-                        st.session_state.feedback.append({"table": table, "feedback": "dislike"})
-                        insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "dislike")
-                        st.error(f"You disliked the results ({dislike_count + 1})")
+                # with col2:
+                #     if st.button(f"👎"):
+                #         dislike_count = get_like_count(table, "dislike")
+                #         st.session_state.feedback.append({"table": table, "feedback": "dislike"})
+                #         insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "dislike")
+                #         st.error(f"You disliked the results ({dislike_count + 1})")
 
                 if not data.empty:
                     x_axis = st.selectbox(f"Select X-axis for {table}", data.columns, key=f"x_axis_{table}")
@@ -203,6 +267,15 @@ with tab2:
                         file_name=f"{table}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+                def load_votes(table):
+                    # Add your database connection and querying logic here to fetch the votes
+                    # For demonstration, return a dictionary with upvotes and downvotes
+                    return {"upvotes": 0, "downvotes": 0}
+
+                # Function to save votes to the database
+                def save_votes(table, votes):
+                    # Add your database connection and updating logic here to save the votes
+                    pass
 
 #This change was done on 23/7/24 to keep track of the user's feedback            
                 # col1, col2 = st.columns(2)

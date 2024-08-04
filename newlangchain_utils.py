@@ -123,37 +123,41 @@ def create_history(messages):
     return history
 
 def invoke_chain(question, messages, selected_model):
-    history = create_history(messages)
-    chain, chosen_tables, SQL_Statement, db = get_chain(question, history.messages, selected_model)
-    print(f"Generated SQL Statement: {SQL_Statement}")
-    SQL_Statement = SQL_Statement.replace("SQL Query:", "").strip()
-    response = chain.invoke({"question": question, "top_k": 3, "messages": history.messages})
-    print("Printing the question: ... ", question)
-    print("Printing the response: ... ", response)
-    print("Printing the chosen tables: ... ", chosen_tables)
-    
-    alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
-    
-#     tables_data = {
-#     table: pd.read_sql(sql=response["query"] + ";", con=alchemyEngine.connect().connection)
-#     for table in chosen_tables
-# }
-    tables_data = {}
-    for table in chosen_tables:
-        query = response["query"] + ";"
-        # result = db.run(query)
-        print(f"Executing SQL Query: {query}")
-        with alchemyEngine.connect() as conn:
-            df = pd.read_sql(
-                sql=query,
-                con=conn.connection
-            )
-        # tables_data[table] = pd.DataFrame()
-        tables_data[table] = df
-        break 
-    
-    
-    return response, chosen_tables, tables_data, db
+    try:
+            history = create_history(messages)
+            chain, chosen_tables, SQL_Statement, db = get_chain(question, history.messages, selected_model)
+            print(f"Generated SQL Statement: {SQL_Statement}")
+            SQL_Statement = SQL_Statement.replace("SQL Query:", "").strip()
+            response = chain.invoke({"question": question, "top_k": 3, "messages": history.messages})
+            print("Printing the question: ... ", question)
+            print("Printing the response: ... ", response)
+            print("Printing the chosen tables: ... ", chosen_tables)
+            
+            alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
+            
+        #     tables_data = {
+        #     table: pd.read_sql(sql=response["query"] + ";", con=alchemyEngine.connect().connection)
+        #     for table in chosen_tables
+        # }
+            tables_data = {}
+            for table in chosen_tables:
+                query = response["query"] + ";"
+                # result = db.run(query)
+                print(f"Executing SQL Query: {query}")
+                with alchemyEngine.connect() as conn:
+                    df = pd.read_sql(
+                        sql=query,
+                        con=conn.connection
+                    )
+                # tables_data[table] = pd.DataFrame()
+                tables_data[table] = df
+                break 
+            
+            
+            return response, chosen_tables, tables_data, db
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return None, [], {}, None
 #This change was done on 23/7/24 to keep track of the user's feedback 
 def insert_feedback(department,user_query, sql_query, table_name, data, feedback_type):
     engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
@@ -166,5 +170,42 @@ def insert_feedback(department,user_query, sql_query, table_name, data, feedback
     """
 
     session.execute(insert_query)
+    session.commit()
+    session.close()
+def load_votes(table_name):
+    votes = {"upvotes": 0, "downvotes": 0}
+    engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    execute_query = f"""
+    SELECT upvotes, downvotes 
+    FROM lz_votes 
+    WHERE table_name = '{table_name}'
+    """
+    
+    result = session.execute(execute_query).fetchone()
+    votes = {"upvotes": 0, "downvotes": 0}
+    if result:
+        votes["upvotes"] = result[0]
+        votes["downvotes"] = result[1]
+    
+    session.close()
+    return votes
+
+# Function to save votes for a table
+def save_votes(table_name, votes):
+    engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    execute_query = f"""
+INSERT INTO lz_votes (table_name, upvotes, downvotes) 
+VALUES ('{table_name}', {votes["upvotes"]}, {votes["downvotes"]})
+ON CONFLICT (table_name) 
+DO UPDATE SET 
+    upvotes = EXCLUDED.upvotes,
+    downvotes = EXCLUDED.downvotes
+"""
+    
+    session.execute(execute_query)
     session.commit()
     session.close()
