@@ -10,11 +10,13 @@
 # 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
 # 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
+# 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
+# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
 #**********************************************************************************************#
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder, speech_to_text
 from whisper_stt import whisper_stt
-
+from table_details import *
 #from openai import OpenAI
 import configure 
 from configure import gauge_config
@@ -32,8 +34,8 @@ col1, col2 = st.columns([1, 5])
 with col1:
     st.image("img.jpg", width=110)
 with col2:
-    st.title("Database Assistant")
-# Set OpenAI API key from Streamlit secrets 
+    st.title("DBQuery : Generative AI assistant to your Database")
+# Set OpenAI API key from Streamlit secrets
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # DATABASES = os.getenv("databases").split(',')
 # MODELS = os.getenv("models").split(',')
@@ -68,7 +70,6 @@ if 'active_tab' not in st.session_state:
 #     st.session_state.selected_subject = SUBJECT_AREAS[0]
 # if "previous_subject" not in st.session_state:
 #     st.session_state.previous_subject = ""
-
 
 # Function to create a circular gauge chart
 def create_circular_gauge_chart(title, value, min_val, max_val, color, subtext):
@@ -126,16 +127,22 @@ with tab2:
     if "previous_subject" not in st.session_state:
        st.session_state.previous_subject = ""
     configure.selected_subject = st.selectbox("Select a Subject Area", configure.subject_areas, index=configure.subject_areas.index(st.session_state.selected_subject))
+
     
+   
     if configure.selected_subject != st.session_state.previous_subject:
         
       st.session_state.messages = []
       st.session_state.response = None
       #st.session_state.tables_data = {}
       st.session_state.selected_subject = configure.selected_subject
-
+      table_details = get_table_details()
     # Display the selected subject area
-    st.write("You selected:", st.session_state.selected_subject)    
+    tables = [line.split("Table Name:")[1].strip() for line in table_details.split("\n") if "Table Name:" in line]
+
+    st.write(f"_You selected: {st.session_state.selected_subject}_")
+    st.write(f"_Number of tables in {st.session_state.selected_subject}: {len(tables)}_")
+    selected_table = st.selectbox("_Tables in this Subject Area :_", tables)    
     if st.button("Clear"):
         st.session_state.clear()
         st.experimental_rerun()
