@@ -12,6 +12,9 @@
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 #**********************************************************************************************#
 import streamlit as st
+from streamlit_mic_recorder import mic_recorder, speech_to_text
+from whisper_stt import whisper_stt
+
 #from openai import OpenAI
 import configure 
 from configure import gauge_config
@@ -29,8 +32,8 @@ col1, col2 = st.columns([1, 5])
 with col1:
     st.image("img.jpg", width=110)
 with col2:
-    st.title("Database Assistant for Service Desk")
-# Set OpenAI API key from Streamlit secrets
+    st.title("Database Assistant")
+# Set OpenAI API key from Streamlit secrets 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # DATABASES = os.getenv("databases").split(',')
 # MODELS = os.getenv("models").split(',')
@@ -93,7 +96,7 @@ def create_circular_gauge_chart(title, value, min_val, max_val, color, subtext):
 
 # Sidebar with small circular gauge charts
 with st.sidebar:
-    st.title("Assessment Dashboard")
+    st.title("Evaluation Dashboard")
     
     col1, col2, col3, col4, col5 = st.columns(5)
     for i, (title, config) in enumerate(gauge_config.items()):
@@ -198,7 +201,9 @@ with tab2:
     selected_subject_input = "What you would like to know about : Subject area - ", configure.selected_subject, "?" 
     print(' '.join(selected_subject_input))
     selected_subject_final = ' '.join(selected_subject_input)
-    
+    st.write("Click start recording to speak:")
+    text = whisper_stt(openai_api_key=OPENAI_API_KEY, language='en')    
+
     if prompt := st.chat_input(selected_subject_final):
         #st.session_state.user_prompt = prompt
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -207,86 +212,83 @@ with tab2:
         st.session_state.user_prompt = prompt
         with st.spinner("Generating response..."):
             response, chosen_tables, tables_data, agent_executor = invoke_chain(prompt, st.session_state.messages, st.session_state.selected_model)
-            #st.session_state.response = response
-            st.session_state.chosen_tables = chosen_tables
-            st.session_state.tables_data = tables_data
-            #st.session_state.user_prompt = prompt
-            st.session_state.generated_query = response["query"]
+            if isinstance(response, str):
+                st.session_state.generated_query = ""  # Or handle it accordingly
+            else:
+                st.session_state.chosen_tables = chosen_tables
+                st.session_state.tables_data = tables_data
+                #st.session_state.user_prompt = prompt
+                st.session_state.generated_query = response["query"]
             # x=response.split(";")[0]+";"
             # y=response.split(";")[1]
             # st.markdown(x)
             #st.markdown(response["query"])
             st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
         st.session_state.messages.append({"role": "assistant", "content": response})
+    elif prompt := text:
+        #st.session_state.user_prompt = prompt
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.user_prompt = prompt
+        with st.spinner("Generating response..."):
+            response, chosen_tables, tables_data, agent_executor = invoke_chain(prompt, st.session_state.messages, st.session_state.selected_model)
+            if isinstance(response, str):
+                st.session_state.generated_query = ""  # Or handle it accordingly
+            else:
+                st.session_state.chosen_tables = chosen_tables
+                st.session_state.tables_data = tables_data
+                #st.session_state.user_prompt = prompt
+                st.session_state.generated_query = response["query"]
+
+            # x=response.split(";")[0]+";"
+            # y=response.split(";")[1]
+            # st.markdown(x)
+            #st.markdown(response["query"])
+            st.markdown(f"*Relevant Tables:* {', '.join(chosen_tables)}")
+        st.session_state.messages.append({"role": "assistant", "content": response})
+    else:
+       #st.error("The input prompt is empty. Please enter a valid question.")
+       pass
+
+
+        
     if "response" in st.session_state and "tables_data" in st.session_state:
-        st.markdown(st.session_state.user_prompt)
-        st.markdown(st.session_state.generated_query)
-        for table, data in st.session_state.tables_data.items():
-                st.markdown(f"*Data from {table}:*")
-                st.dataframe(data)
-                st.markdown("**Was this response helpful?**")
-                voting_interface(table)
-                #print("generated data":data)
-                # col1, col2 = st.columns(2)
+            st.markdown(st.session_state.user_prompt)
+            st.markdown(st.session_state.generated_query)
+            for table, data in st.session_state.tables_data.items():
+                    st.markdown(f"*Data from {table}:*")
+                    st.dataframe(data)
+                    st.markdown("**Was this response helpful?**")
+                    voting_interface(table)
 
-                # @st.cache_data
-                # def get_like_count(table, feedback):
-                #     return st.session_state.feedback.count({"table": table, "feedback": feedback})
+                    if not data.empty:
+                        x_axis = st.selectbox(f"Select X-axis for {table}", data.columns, key=f"x_axis_{table}")
+                        y_axis = st.selectbox(f"Select Y-axis for {table}", data.columns, key=f"y_axis_{table}")
+                        chart_type = st.selectbox(
+                            f"Select Chart Type for {table}", 
+                            ["Line Chart", "Bar Chart", "Scatter Plot", "Pie Chart", "Histogram", 
+                            "Box Plot", "Heatmap", "Violin Plot", "Area Chart", "Funnel Chart"], 
+                            key=f"chart_type_{table}"
+                        )
 
-                # with col1:
-                #     if st.button(f"👍"):
-                #         like_count = get_like_count(table, "like")
-                #         st.session_state.feedback.append({"table": table, "feedback": "like"})
-                #         insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "like")
-                #         st.success(f"You liked the results ({like_count + 1})")
+                        if st.button(f"Generate Chart for {table}", key=f"generate_chart_{table}"):
+                            plot_chart(data, x_axis, y_axis, chart_type)
 
-                # with col2:
-                #     if st.button(f"👎"):
-                #         dislike_count = get_like_count(table, "dislike")
-                #         st.session_state.feedback.append({"table": table, "feedback": "dislike"})
-                #         insert_feedback(configure.selected_subject, st.session_state.user_prompt, st.session_state.generated_query, table, data, "dislike")
-                #         st.error(f"You disliked the results ({dislike_count + 1})")
-
-                if not data.empty:
-                    x_axis = st.selectbox(f"Select X-axis for {table}", data.columns, key=f"x_axis_{table}")
-                    y_axis = st.selectbox(f"Select Y-axis for {table}", data.columns, key=f"y_axis_{table}")
-                    chart_type = st.selectbox(
-                        f"Select Chart Type for {table}", 
-                        ["Line Chart", "Bar Chart", "Scatter Plot", "Pie Chart", "Histogram", 
-                         "Box Plot", "Heatmap", "Violin Plot", "Area Chart", "Funnel Chart"], 
-                        key=f"chart_type_{table}"
+                    excel_data = download_as_excel(data)
+                    st.download_button(
+                            label="Download as Excel",
+                            data=excel_data,
+                            file_name=f"{table}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
+                    def load_votes(table):
+                        # Add your database connection and querying logic here to fetch the votes
+                        # For demonstration, return a dictionary with upvotes and downvotes
+                        return {"upvotes": 0, "downvotes": 0}
 
-                    if st.button(f"Generate Chart for {table}", key=f"generate_chart_{table}"):
-                        plot_chart(data, x_axis, y_axis, chart_type)
+                    # Function to save votes to the database
+                    def save_votes(table, votes):
+                        # Add your database connection and updating logic here to save the votes
+                        pass
 
-                excel_data = download_as_excel(data)
-                st.download_button(
-                        label="Download as Excel",
-                        data=excel_data,
-                        file_name=f"{table}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                def load_votes(table):
-                    # Add your database connection and querying logic here to fetch the votes
-                    # For demonstration, return a dictionary with upvotes and downvotes
-                    return {"upvotes": 0, "downvotes": 0}
-
-                # Function to save votes to the database
-                def save_votes(table, votes):
-                    # Add your database connection and updating logic here to save the votes
-                    pass
-
-#This change was done on 23/7/24 to keep track of the user's feedback            
-                # col1, col2 = st.columns(2)
-                # with col1:
-                #    if st.button(f"👍"):
-                #         st.session_state.feedback.append({"table": table, "feedback": "like"})
-                #         insert_feedback(configure.selected_subject,st.session_state.user_prompt,st.session_state.generated_query,table,data,"like")
-                #         st.success(f"You liked the results")
-                # with col2:
-                #     if st.button(f"👎"):
-                #         st.session_state.feedback.append({"table": table, "feedback": "dislike"})
-                #         #st.session_state.response = response
-                #         insert_feedback(configure.selected_subject,st.session_state.user_prompt,st.session_state.generated_query,table,data,"dislike")
-                #         st.error(f"You disliked the results")

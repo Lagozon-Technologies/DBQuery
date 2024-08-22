@@ -7,9 +7,11 @@
 # Change Details:
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
-# 01             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 03             15-Jul-2024   Krushna B.     Added more examples for the model to work more finely
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
+# 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
+# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
 # **********************************************************************************************#
 
 from examples import get_example_selector

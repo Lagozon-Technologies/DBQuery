@@ -8,11 +8,14 @@
 # Version No:     Date:        Changed by     Changes Done         
 # 01             25-Jun-2024   Krushna B.     Initial Creation
 # 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
-# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback 
+# 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
-# **********************************************************************************************#
+# 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
+# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
+#**********************************************************************************************#
 #from tkinter.messagebox import QUESTION
 import pandas as pd
+import os
 import streamlit as st
 import configure
 from operator import itemgetter
@@ -22,7 +25,7 @@ from langchain_openai import ChatOpenAI
 
 #from  langchain_openai.chat_models import with_structured_output
 
-
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 llm = ChatOpenAI(model=configure.selected_models, temperature=0)
 from typing import List
 
@@ -56,6 +59,7 @@ def get_tables(tables: List[Table]) -> List[str]:
 
 # table_names = "\n".join(db.get_usable_table_names())
 table_details = get_table_details()
+print("testinf details",table_details, type(table_details))
 table_details_prompt = f"""Return the names of ALL the SQL tables that MIGHT be relevant to the user question. \
 The tables are:
 

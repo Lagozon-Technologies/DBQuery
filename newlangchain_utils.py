@@ -9,6 +9,9 @@
 # 01             25-Jun-2024   Krushna B.     Initial Creation
 # 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
 # 03             23-Jul-2024   Krushna B.     Added logic for capturing user's feedback 
+# 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
+# 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
+# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it           
 # **********************************************************************************************#
 import os
 import pandas as pd
@@ -156,8 +159,11 @@ def invoke_chain(question, messages, selected_model):
             
             return response, chosen_tables, tables_data, db
     except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return None, [], {}, None
+        #st.error(f"An error occurred: {e}")
+        custom_message = "The above asked information does not belong to the selected subject area."
+        st.warning(custom_message)
+        return custom_message, [], {}, None
+        #return None, [], {}, None
 #This change was done on 23/7/24 to keep track of the user's feedback 
 def insert_feedback(department,user_query, sql_query, table_name, data, feedback_type):
     engine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
